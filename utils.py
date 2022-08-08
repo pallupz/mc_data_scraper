@@ -56,3 +56,124 @@ def get_fundamentals(URL: str) -> Dict:
                 output['20d_avg_delivery'] = float(item.find('td', 'nsed20ad bsed20ad').text.strip().replace(',', ''))
             
         return output
+
+def get_quarterly_results(URL: str) -> Dict:
+    output = {}
+    output['url'] = URL
+
+    try:
+        page = requests.get(URL)
+        page.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        raise SystemExit(err)
+    else:
+        soup = BeautifulSoup(page.text, 'html.parser')
+
+        table = soup.find('table', 'mctable1')
+        output['period'] = table.findNext('tr').findNext('td').findNext('td').text.strip().replace("'", '')
+        
+        data_rows = table.select('tr')
+        for row in data_rows:
+            data = [ x.text.strip() for x in row.find_all('td')]
+            # print(data)
+            if 'Net Sales/Income from operations' in data:
+                output['sales'] = data[1]
+        return output
+
+def get_balance_sheet_data(URL: str) -> Dict:
+    output = {}
+    output['url'] = URL
+
+    try:
+        page = requests.get(URL)
+        page.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        raise SystemExit(err)
+    else:
+        soup = BeautifulSoup(page.text, 'html.parser')
+
+        table = soup.find('table', 'mctable1')
+        output['period'] = table.findNext('tr').findNext('td').findNext('td').text.strip().replace("'", '')
+        
+        data_rows = table.select('tr')
+        for row in data_rows:
+            data = [ x.text.strip() for x in row.find_all('td')]
+            # print(data)
+            if 'Total Share Capital' in data:
+                output['share_capital'] = float(data[1].strip().replace(',',''))
+            if 'Total Reserves and Surplus' in data:
+                output['reserves_and_surplus'] = float(data[1].strip().replace(',',''))
+            if 'Total Non-Current Liabilities' in data:
+                output['non_current_liabilities'] = float(data[1].strip().replace(',',''))
+            if 'Total Current Liabilities' in data:
+                output['current_liabilities'] = float(data[1].strip().replace(',',''))
+            if 'Total Capital And Liabilities' in data:
+                output['total_liabilities'] = float(data[1].strip().replace(',',''))
+            if 'Contingent Liabilities' in data:
+                output['contigent_liabilities'] = float(data[1].strip().replace(',',''))
+            
+        return output
+
+def get_cash_flow_data(URL: str) -> Dict:
+    output = {}
+    output['url'] = URL
+
+    try:
+        page = requests.get(URL)
+        page.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        raise SystemExit(err)
+    else:
+        soup = BeautifulSoup(page.text, 'html.parser')
+
+        table = soup.find('table', 'mctable1')
+        output['period'] = table.findNext('tr').findNext('td').findNext('td').text.strip().replace("'", '')
+        
+        data_rows = table.select('tr')
+        for row in data_rows:
+            data = [ x.text.strip() for x in row.find_all('td')]
+            # print(data)
+            if 'Net Inc/Dec In Cash And Cash Equivalents' in data:
+                output['net_cash_flow'] = float(data[1].strip().replace(',',''))
+            
+        return output
+
+def get_ratios_data(URL: str) -> Dict:
+    output = {}
+    output['url'] = URL
+
+    try:
+        page = requests.get(URL)
+        page.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        raise SystemExit(err)
+    else:
+        soup = BeautifulSoup(page.text, 'html.parser')
+
+        ## Get Leverage Data
+        output['leverage'] = {}
+        table = soup.find('table', {'id': 'table_C_leverage_ratios_Ratios'})
+        output['leverage']['period'] = table.findNext('tr').findNext('th').findNext('th').text.strip().replace("'", '')
+        data_rows = table.select('tr')
+        for row in data_rows:
+            data = [ x.text.strip() for x in row.find_all('td')]
+            # print(data)
+            if 'Debt to Equity (x)' in data:
+                output['leverage']['debt_to_equity'] = float(data[1].strip().replace(',',''))
+            if 'Interest Coverage Ratios (X)' in data:
+                output['leverage']['int_coverage'] = float(data[1].strip().replace(',',''))
+        
+        ## Get Liquidity Data
+        output['liquidity'] = {}
+        table = soup.find('table', {'id': 'table_C_liquidity_ratios_Ratios'})
+        output['liquidity']['period'] = table.findNext('tr').findNext('th').findNext('th').text.strip().replace("'", '')
+        data_rows = table.select('tr')
+        for row in data_rows:
+            data = [ x.text.strip() for x in row.find_all('td')]
+            # print(data)
+            if 'Current Ratio (X)' in data:
+                output['liquidity']['current_ratio'] = float(data[1].strip().replace(',',''))
+            if 'Quick Ratio (X)' in data:
+                output['liquidity']['quick_ratio'] = float(data[1].strip().replace(',',''))
+            
+        return output
